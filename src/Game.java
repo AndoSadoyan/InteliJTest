@@ -9,35 +9,41 @@ import java.lang.Thread;
 
 public class Game
 {
+    final String bird = "@";
     final int height = 15;
     final int lenght =80;
     final int birdX=20;
     int birdY=height/2;
-    final String bird = "@";
     TreeSet<pipe> pipes= new TreeSet<>();
     Random rand = new Random();
     int passed=0;
     int difficulty = 400;
+    Thread inputThread;
 
+    public void resetGame() {
+        birdY = height / 2;
+        passed = 0;
+        difficulty = 400;
+        initPipes();
+        inputThread = new Thread(this::handleInput);
+    }
 
     public void handleInput()
     {
-        while(true) {
+        while(!crashed()) {
             try {
                 System.in.read();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             birdY-=1;
-
         }
     }
 
     public void play()
     {
-        initPipes();
-        Thread inputThread = new Thread(this::handleInput);
-        inputThread.setDaemon(true);  // Make this a daemon thread so it exits when the main game loop ends.
+        resetGame();
+//      inputThread.setDaemon(true);
         inputThread.start();
         while(!crashed())
         {
@@ -122,14 +128,16 @@ public class Game
         if(pipes.last().x < 68)
             pipes.add(new pipe(79, rand.nextInt(3,12), rand.nextBoolean()));
         if(passed>0 && passed%5==0)
-            difficulty-=10;
+            difficulty-=5;
     }
     public boolean crashed()
     {
-        if (birdY>=height || birdY<0)
+        if (birdY>=height || birdY<1)
             return true;
         for(var pipe : pipes)
         {
+            if(pipe.x>22)
+                break;
             if(pipe.x==20)
             {
                 if((pipe.floor && height-pipe.lenght<=birdY) || (!pipe.floor && pipe.lenght>birdY))
@@ -140,6 +148,7 @@ public class Game
     }
     public void initPipes()
     {
+        pipes.clear();
         int currX=40;
         for(int i=0; i<10; ++i,currX+=12)
         {
@@ -148,7 +157,6 @@ public class Game
             pipes.add(new pipe(currX,lenght,side));
         }
     }
-
     static class pipe implements Comparable<pipe>
     {
         int x;
@@ -178,9 +186,9 @@ public class Game
     {
         if(passed<10)
             System.out.println("😔Noob! You passed only "+ passed +  " pipes😔");
-        else if(passed < 30)
+        else if(passed < 20)
             System.out.println("😊Not so bad! You passed " + passed + " pipes😊");
-        else if(passed < 50)
+        else if(passed < 30)
             System.out.println("😎You are really good at it! You passed "+ passed +" pipes😎");
         else
             System.out.println("😮Legend! You passed " + passed+" pipes😮");
